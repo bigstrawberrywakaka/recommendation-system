@@ -1,2 +1,15 @@
 # recommendation-system
-recommendation system model inplementation(updating...)
+
+## recommendation system model inplementation(updating...)
+
+## paper list:
+
+- ### AutoRec: Autoencoders Meet Collaborative Filtering
+
+- ### Deep Crossing: Web-Scale Modeling without Manually Crafted Combinatorial Features
+
+## Dependency:
+
+- python3
+
+- torch1.9.1+cu111
