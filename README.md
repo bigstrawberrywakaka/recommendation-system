@@ -7,6 +7,7 @@ recommendation system model inplementation(updating...)
 - AutoRec: Autoencoders Meet Collaborative Filtering
 - Deep Crossing: Web-Scale Modeling without Manually Crafted Combinatorial Features
 - Product-based Neural Networks for User Response Prediction
+- Deep & Cross Network for Ad Click Predictions
 
 ## Dependency:
 
