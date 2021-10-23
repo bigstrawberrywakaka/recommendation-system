@@ -8,14 +8,14 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from utils import get_data, evaluate
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from sklearn.metrics import roc_auc_score
 import warnings
 warnings.filterwarnings('ignore')
 
 # args
-embed_dim = 8
+embed_dim = 32
 BATCH_SIZE = 256
 epoch = 5
 hidden_layers = [512,256,128,64,32]
@@ -46,61 +46,14 @@ class DeepCrossing(nn.Module):
         output = torch.sigmoid(self.fc(output)).squeeze(-1)
         return output
 
-def get_data(filename):
-    num_cols = ["I"+str(i) for i in range(1, 14)]
-    cat_cols = ['C'+str(i) for i in range(1,27)]
-    # read file
-    col_names_train = ['Label'] + ["I"+str(i) for i in range(1, 14)] + ['C'+str(i) for i in range(1,27)]
-    df_train = pd.read_csv(filename, sep='\t', names=col_names_train, chunksize=100000) # ten chunks: first 1,000,000
-    data = df_train.get_chunk(2500000)# train 2000000, test 500000
-    labels = data['Label']
-    del data['Label']
-    # prepocess
-    emb_col = dict()# 需要emb的fea和类别数(>256) 稀疏特征embedding
-    for i, col in enumerate(data.columns):
-        if col in num_cols:
-            data[col] = data[col].fillna(data[col].median())
-        if col in cat_cols:
-            data[col] = data[col].fillna('null')
-            data[col] = data[col].astype('str')
-            data[col] = LabelEncoder().fit_transform(data[col])
-            # find category>256, need embedding
-            if data[col].nunique() > 256:
-                emb_col[i] = data[col].nunique()# 列索引，类别数
-    unembed_col = [i for i in range(len(data.columns)) if i not in emb_col]
-    # split train and test
-    idxes = np.arange(data.shape[0])
-    np.random.seed(2021)   
-    np.random.shuffle(idxes)
-    y_train, y_test = labels.iloc[idxes[:2000000]].values, labels.iloc[idxes[2000000:]].values
-    x_train, x_test = data.iloc[idxes[:2000000]].values, data.iloc[idxes[2000000:]].values
-    train_data = TensorDataset(torch.LongTensor(x_train), torch.LongTensor(y_train))
-    train_sampler = RandomSampler(train_data)
-    train_loader = DataLoader(train_data, sampler=train_sampler, batch_size=BATCH_SIZE)
-    test_data = TensorDataset(torch.LongTensor(x_test), torch.LongTensor(y_test))
-    test_sampler = SequentialSampler(test_data)
-    test_loader = DataLoader(test_data, sampler=test_sampler, batch_size=BATCH_SIZE)
-    return train_loader, test_loader, emb_col, unembed_col
-
-def evaluate(model, test_loader):
-    model.eval()
-    val_true, val_pred = [], []
-    with torch.no_grad():
-        for idx, (x, y) in (enumerate(test_loader)):
-            y_pred = model(x.cuda())# 为1的概率
-            y_pred = y_pred.detach().cpu().numpy().tolist()
-            val_pred.extend(y_pred)
-            val_true.extend(y.squeeze().cpu().numpy().tolist())
-    
-    return roc_auc_score(val_true, val_pred)  
-
 if __name__ == '__main__':
-    filename = './data/dac/train.txt'
+    filename = './data/criteo_sampled_data.csv'
     train_loader, test_loader, emb_col, unembed_col = get_data(filename)
     # train...
     model = DeepCrossing(emb_col, unembed_col)
     model.cuda()
     total_loss = 0.0
+    oof_auc = 0.0
     critetion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     for i in range(epoch):
@@ -121,3 +74,5 @@ if __name__ == '__main__':
         model.eval()
         auc = evaluate(model, test_loader)
         print("epoch ", i, "auc is: ", auc)
+        oof_auc += auc
+    print("average valid auc: ", oof_auc/epoch)
