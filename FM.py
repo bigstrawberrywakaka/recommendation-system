@@ -12,18 +12,22 @@ warnings.filterwarnings('ignore')
 epoch = 5
 
 class FM(nn.Module):
-	def __init__(self, emb_col, unembed_col, k=10):# k<<stack_dim
-		super(FM, self).__init__()
-		self.stack_dim = len(emb_col) + len(unembed_col)
-		self.k = k
-		self.fc = nn.Linear(self.k, 1)
-		self.v = nn.Parameter(nn.init.xavier_uniform_(torch.randn(self.stack_dim, self.k)))
-	def forward(self, x):
-		x = x.float()
-		a = torch.pow(torch.mm(x, self.v), 2)# (bs, k)
-		b = torch.mm(torch.pow(x, 2), torch.pow(self.v, 2))
-		fm_output = 0.5 * (a - b)
-		return torch.sigmoid(self.fc(fm_output))
+    def __init__(self, emb_col, unembed_col, k=10):# k<<stack_dim
+        super(FM, self).__init__()
+        self.stack_dim = len(emb_col) + len(unembed_col)
+        self.k = k
+        self.fc1 = nn.Linear(self.stack_dim, 1)
+        self.fc2 = nn.Linear(self.k, 1)
+        self.v = nn.Parameter(nn.init.xavier_uniform_(torch.randn(self.stack_dim, self.k)))
+
+    def forward(self, x):
+        x = x.float()
+        linear = self.fc1(x)
+        a = torch.pow(torch.mm(x, self.v), 2)# (bs, k)
+        b = torch.mm(torch.pow(x, 2), torch.pow(self.v, 2))
+        cross = 0.5 * (a - b)
+        fm_output = linear + cross
+        return torch.sigmoid(self.fc2(fm_output))
 
 if __name__ == '__main__':
     filename = './data/criteo_sampled_data.csv'
