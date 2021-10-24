@@ -8,6 +8,9 @@ recommendation system model inplementation(updating...)
 - Deep Crossing: Web-Scale Modeling without Manually Crafted Combinatorial Features
 - Product-based Neural Networks for User Response Prediction
 - Deep & Cross Network for Ad Click Predictions
+- DeepFM: A Factorization-Machine based Neural Network for CTR Prediction
+- Factorization Machines
+- DeepFM: A Factorization-Machine based Neural Network for CTR Prediction
 
 ## Dependency:
 
