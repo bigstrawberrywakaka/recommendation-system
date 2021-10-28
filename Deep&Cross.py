@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
         # valid...
         model.eval()
-        logloss, auc = evaluate(model, test_loader)# 这是所有验证集的吧
+        logloss, auc = evaluate(model, test_loader)
         print("epoch ", i, "auc is: ", auc, "logloss is: ", logloss)
         oof_auc += auc
         valid_loss += logloss

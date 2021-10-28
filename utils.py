@@ -12,7 +12,7 @@ def get_data(filename):
     # read file
     col_names_train = ['label'] + ["I"+str(i) for i in range(1, 14)] + ['C'+str(i) for i in range(1,27)]
     df_train = pd.read_csv(filename, sep=',')
-    df_train = df_train.iloc[:5000]# 小数据测试
+    #df_train = df_train.iloc[:5000]# 小数据测试
     data = df_train
     labels = data['label']
     del data['label']
@@ -29,8 +29,8 @@ def get_data(filename):
             data[col] = data[col].astype('str')
             data[col] = LabelEncoder().fit_transform(data[col])
             # find category>256, need embedding
-            # if data[col].nunique() > 256:
-            emb_col[i] = data[col].nunique()# 列索引，类别数
+            if data[col].nunique() > 256:
+                emb_col[i] = data[col].nunique()# 列索引，类别数
     unembed_col = [i for i in range(len(data.columns)) if i not in emb_col]
     # split train and test
     idxes = np.arange(data.shape[0])
